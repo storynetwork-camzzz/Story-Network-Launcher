@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Story Network Launcher</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after {
+  box-sizing: border-box; margin: 0; padding: 0;
+  font-family: 'Montserrat', sans-serif;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  background: #02020a;
+  color: #dde0ff;
+  overflow: hidden;
+}
+
+/* ── CASINO-STYLE BG CANVAS ── */
+#bgCanvas {
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
+  z-index: 0; pointer-events: none;
+}
+
+/* ── SIDE DECORATIONS (from casino) ── */
+.side-deco {
+  position: fixed; top: 0; bottom: 0;
+  width: 52px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 1; opacity: 0.22; pointer-events: none;
+}
+.side-deco.left  { left: 0; }
+.side-deco.right { right: 0; }
+.deco-line {
+  flex: 1; width: 1px;
+  background: linear-gradient(to bottom, transparent, #0000ff, transparent);
+  min-height: 30px;
+}
+.deco-suit {
+  font-size: 1.1rem; color: #0000ff; padding: 6px 0;
+}
+
+/* ── LAYOUT ── */
+#launcher {
+  position: relative; z-index: 2;
+  width: 100%; height: 100vh;
+  display: flex; flex-direction: column;
+}
+
+/* ── HEADER ── */
+header {
+  flex-shrink: 0;
+  padding: 22px 60px;
+  display: flex; align-items: center; gap: 16px;
+  border-bottom: 1px solid rgba(0,0,255,0.3);
+  background: rgba(2,2,14,0.92);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 2px 24px rgba(0,0,255,0.1);
+}
+.hlogo {
+  width: 48px; height: 48px; border-radius: 12px;
+  overflow: hidden; flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(0,0,255,0.6);
+}
+.hlogo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.htitle {
+  font-size: 1.35rem; font-weight: 900;
+  letter-spacing: 0.06em; color: #fff;
+  text-shadow: 0 0 24px rgba(0,0,255,0.5);
+}
+.htitle span { color: #0000ff; }
+.hsub {
+  font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: #4a4a88; margin-top: 3px;
+}
+
+/* ── MAIN ── */
+main {
+  flex: 1;
+  padding: 36px 60px;
+  display: flex; align-items: flex-start;
+  overflow-y: auto;
+}
+
+/* ── GRID ── */
+#grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 18px;
+}
+@media (max-width: 1400px) { #grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 900px)  { #grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 540px)  { #grid { grid-template-columns: 1fr; } }
+
+/* ── CARD ── */
+.card {
+  background: rgba(8,8,28,0.97);
+  border: 1px solid rgba(0,0,255,0.35);
+  border-radius: 20px; overflow: hidden;
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 0 40px rgba(0,0,255,0.05);
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+}
+.card:hover {
+  transform: translateY(-6px) scale(1.02);
+  border-color: var(--accent, #0000ff);
+  box-shadow: 0 0 50px var(--glow, rgba(0,0,255,0.3)),
+              0 16px 40px rgba(0,0,0,0.6);
+}
+
+.card-banner {
+  height: 96px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.card-banner-inner {
+  position: absolute; inset: 0; opacity: 0.22;
+}
+.card-logo {
+  width: 56px; height: 56px; border-radius: 14px;
+  object-fit: contain; position: relative; z-index: 1;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.6);
+  filter: drop-shadow(0 0 8px rgba(0,0,255,0.4));
+}
+
+.card-body {
+  padding: 16px 18px 18px;
+  display: flex; flex-direction: column; flex: 1;
+}
+.card-name {
+  font-size: 0.95rem; font-weight: 900;
+  color: #fff; letter-spacing: 0.04em;
+  margin-bottom: 7px;
+  text-shadow: 0 0 14px rgba(0,0,255,0.3);
+}
+.card-desc {
+  font-size: 0.75rem; font-weight: 500;
+  color: #4a4a88; line-height: 1.6;
+  flex: 1; margin-bottom: 14px;
+}
+.card-btn {
+  width: 100%; padding: 11px;
+  border-radius: 12px; border: none;
+  color: #fff; font-family: 'Montserrat', sans-serif;
+  font-size: 0.78rem; font-weight: 900;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s, box-shadow 0.2s;
+  position: relative; overflow: hidden;
+}
+.card-btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.14) 0%, transparent 60%);
+  pointer-events: none;
+}
+.card-btn:hover { opacity: 0.85; }
+.card-btn:active { transform: scale(0.98); }
+
+/* ── MODAL ── */
+#overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(2,2,10,0.85);
+  backdrop-filter: blur(16px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+#overlay.open { opacity: 1; pointer-events: all; }
+
+#modal {
+  width: min(520px, 88vw);
+  background: rgba(8,8,28,0.99);
+  border: 1px solid rgba(0,0,255,0.5);
+  border-radius: 22px; overflow: hidden;
+  box-shadow: 0 0 80px rgba(0,0,255,0.14), 0 32px 64px rgba(0,0,0,0.85);
+  transform: scale(0.92) translateY(20px);
+  transition: transform 0.28s cubic-bezier(0.16,1,0.3,1);
+}
+#overlay.open #modal { transform: scale(1) translateY(0); }
+
+#modal-banner {
+  height: 110px; position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+#modal-banner-bg { position: absolute; inset: 0; opacity: 0.22; }
+#modal-logo {
+  width: 66px; height: 66px; border-radius: 16px;
+  object-fit: contain; position: relative; z-index: 1;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.7);
+  filter: drop-shadow(0 0 10px rgba(0,0,255,0.5));
+}
+#modal-close {
+  position: absolute; top: 13px; right: 15px; z-index: 5;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(0,0,255,0.3);
+  border-radius: 50%; width: 32px; height: 32px;
+  font-size: 15px; color: #4a4a88;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+#modal-close:hover { background: rgba(0,0,255,0.2); color: #fff; }
+
+#modal-body { padding: 22px 28px 26px; }
+#modal-name {
+  font-size: 1.2rem; font-weight: 900; color: #fff;
+  letter-spacing: 0.06em; margin-bottom: 4px;
+  text-shadow: 0 0 20px rgba(0,0,255,0.4);
+}
+#modal-sub {
+  font-size: 0.65rem; font-weight: 800;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: #4a4a88; margin-bottom: 14px;
+}
+#modal-desc {
+  font-size: 0.84rem; font-weight: 500;
+  color: rgba(200,210,230,0.65); line-height: 1.7;
+  margin-bottom: 20px;
+}
+#modal-status {
+  font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.06em; color: #4a4a88;
+  text-align: center; min-height: 1.1em;
+  margin-bottom: 12px;
+}
+#modal-status.err { color: #ff3355; }
+
+.modal-row { display: flex; gap: 10px; }
+#modal-go {
+  flex: 1; padding: 14px;
+  border-radius: 12px; border: none;
+  color: #fff; font-family: 'Montserrat', sans-serif;
+  font-size: 0.84rem; font-weight: 900;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.15s, box-shadow 0.2s;
+  position: relative; overflow: hidden;
+}
+#modal-go::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.14) 0%, transparent 60%);
+  pointer-events: none;
+}
+#modal-go:hover { opacity: 0.85; }
+#modal-go:disabled { opacity: 0.35; cursor: not-allowed; }
+#modal-cancel {
+  padding: 14px 18px; border-radius: 12px;
+  border: 1px solid rgba(0,0,255,0.35);
+  background: transparent; color: #4a4a88;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.78rem; font-weight: 700;
+  cursor: pointer; transition: border-color 0.2s, color 0.2s;
+}
+#modal-cancel:hover { border-color: rgba(0,0,255,0.7); color: #fff; }
+
+/* ── LOADING ── */
+#loadscreen {
+  display: none;
+  position: fixed; inset: 0; z-index: 9998;
+  background: #02020a;
+  flex-direction: column;
+  align-items: center; justify-content: center; gap: 18px;
+}
+#loadscreen.on { display: flex; }
+.spin {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 3px solid rgba(0,0,255,0.15);
+  border-top-color: #0000ff;
+  animation: spinning 0.8s linear infinite;
+}
+@keyframes spinning { to { transform: rotate(360deg); } }
+.loadlabel {
+  font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: #4a4a88;
+}
+
+/* ── APP FRAME ── */
+#appframe {
+  display: none;
+  position: fixed; inset: 0; z-index: 9999;
+  width: 100%; height: 100%; border: none;
+}
+#appframe.on { display: block; }
+
+/* ── FOOTER ── */
+footer {
+  flex-shrink: 0;
+  padding: 12px 60px;
+  display: flex; align-items: center; justify-content: center;
+  border-top: 1px solid rgba(0,0,255,0.18);
+  background: rgba(2,2,14,0.92);
+  gap: 18px;
+}
+.footer-text {
+  font-size: 0.64rem; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: #4a4a88;
+}
+.footer-dot { color: rgba(0,0,255,0.4); font-size: 0.5rem; }
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+
+<!-- Casino-style side decorations -->
+<div class="side-deco left">
+  <div class="deco-line"></div>
+  <div class="deco-suit">♠</div>
+  <div class="deco-line"></div>
+  <div class="deco-suit">♦</div>
+  <div class="deco-line"></div>
+  <div class="deco-suit">♣</div>
+  <div class="deco-line"></div>
+  <div class="deco-suit">♥</div>
+  <div class="deco-line"></div>
+</div>
+<div class="side-deco right">
+  <div class="deco-line"></div>
+  <div class="deco-suit">♥</div>
+  <div class="deco-line"></div>
+  <div class="deco-suit">♣</div>
+  <div class="deco-line"></div>
+  <div class="deco-suit">♦</div>
+  <div class="deco-line"></div>
+  <div class="deco-suit">♠</div>
+  <div class="deco-line"></div>
+</div>
+
+<div id="launcher">
+  <header>
+    <div class="hlogo">
+      <img src="https://codehs.com/uploads/b9084e2547f1923caa433b97f16c89d1" alt="SN">
+    </div>
+    <div>
+      <div class="htitle">Story <span>Network</span></div>
+      <div class="hsub">Project Launcher</div>
+    </div>
+  </header>
+
+  <main>
+    <div id="grid"></div>
+  </main>
+
+  <footer>
+    <span class="footer-text">© 2025 Story Network</span>
+    <span class="footer-dot">●</span>
+    <span class="footer-text">Built by Camzzz</span>
+    <span class="footer-dot">●</span>
+    <span class="footer-text">All Rights Reserved</span>
+  </footer>
+</div>
+
+<!-- Modal -->
+<div id="overlay">
+  <div id="modal">
+    <div id="modal-banner">
+      <div id="modal-banner-bg"></div>
+      <img id="modal-logo" src="" alt=""/>
+      <button id="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-body">
+      <div id="modal-name"></div>
+      <div id="modal-sub"></div>
+      <div id="modal-desc"></div>
+      <div id="modal-status"></div>
+      <div class="modal-row">
+        <button id="modal-go" onclick="doLaunch()">Launch</button>
+        <button id="modal-cancel" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading -->
+<div id="loadscreen">
+  <div class="spin" id="spin"></div>
+  <div class="loadlabel" id="loadlabel">Loading…</div>
+</div>
+
+<!-- App iframe -->
+<iframe id="appframe"
+  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-top-navigation allow-top-navigation-by-user-activation">
+</iframe>
+
+<script>
+// ── CASINO BACKGROUND (matches login page canvas exactly)
+(function() {
+  var canvas = document.getElementById('bgCanvas');
+  var ctx = canvas.getContext('2d');
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Particles
+  var particles = [];
+  var PARTICLE_COUNT = 55;
+
+  function makeParticle() {
+    return {
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: (Math.random() - 0.5) * 0.5,
+      r: Math.random() * 2 + 0.5,
+      opacity: Math.random() * 0.5 + 0.1
+    };
+  }
+
+  for (var i = 0; i < PARTICLE_COUNT; i++) {
+    particles.push(makeParticle());
+  }
+
+  function drawBg() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Deep dark base gradient
+    var grad = ctx.createRadialGradient(
+      canvas.width * 0.5, canvas.height * 0.5, 0,
+      canvas.width * 0.5, canvas.height * 0.5, canvas.width * 0.75
+    );
+    grad.addColorStop(0,   'rgba(0,0,40,0.55)');
+    grad.addColorStop(0.5, 'rgba(0,0,20,0.3)');
+    grad.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw connections between nearby particles
+    for (var a = 0; a < particles.length; a++) {
+      for (var b = a + 1; b < particles.length; b++) {
+        var dx = particles[a].x - particles[b].x;
+        var dy = particles[a].y - particles[b].y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 140) {
+          ctx.beginPath();
+          ctx.moveTo(particles[a].x, particles[a].y);
+          ctx.lineTo(particles[b].x, particles[b].y);
+          ctx.strokeStyle = 'rgba(0,0,255,' + (0.12 * (1 - dist / 140)) + ')';
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Draw particles
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,0,255,' + p.opacity + ')';
+      ctx.fill();
+
+      // Glow ring on larger ones
+      if (p.r > 1.5) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,255,' + (p.opacity * 0.12) + ')';
+        ctx.fill();
+      }
+
+      // Move
+      p.x += p.vx;
+      p.y += p.vy;
+
+      if (p.x < -10) p.x = canvas.width + 10;
+      if (p.x > canvas.width + 10) p.x = -10;
+      if (p.y < -10) p.y = canvas.height + 10;
+      if (p.y > canvas.height + 10) p.y = -10;
+    }
+
+    requestAnimationFrame(drawBg);
+  }
+  drawBg();
+})();
+
+// ── PROJECTS
+var PROJECTS = [
+  {
+    id: 'library',
+    name: 'The Library',
+    sub: 'Story Network Hub',
+    desc: 'A document made by Camzzz that serves as the main hub for Story Network as of now.',
+    logo: 'https://codehs.com/uploads/42b9587a6dd73b104e8ef00959c00eda',
+    url: 'https://tinyurl.com/storynetworkthelibrary?authuser=1',
+    accent: '#cc0000',
+    glow: 'rgba(204,0,0,0.45)',
+    banner: 'linear-gradient(135deg,#1a0000,#cc0000)',
+    external: true
+  },
+  {
+    id: 'sngn26',
+    name: 'SN GN Math 2026',
+    sub: 'Games & Tools',
+    desc: "USE ME TO PLAY GAMES! Built off of GN Math, there's more content, better organization, and better settings.",
+    logo: 'https://codehs.com/uploads/84799a0bb8e09668879b73acd5e7abaa',
+    url: 'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/Story-Network-GN-Math-2026@b493b04/index.html',
+    accent: '#0000ff',
+    glow: 'rgba(0,0,255,0.45)',
+    banner: 'linear-gradient(135deg,#000033,#0000ff)'
+  },
+  {
+    id: 'zicon',
+    name: 'Zicon',
+    sub: 'Browser Engine',
+    desc: "Sort of working unbl*cker for Securly monitored Chromebooks.",
+    logo: 'https://codehs.com/uploads/ee77546924d708500625cd4e58cca53d',
+    url: 'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/Zicon/index.html',
+    accent: '#58c52d',
+    glow: 'rgba(88,197,45,0.45)',
+    banner: 'linear-gradient(135deg,#050a02,#58c52d)'
+  },
+  {
+    id: 'sncasino',
+    name: 'SN Casino',
+    sub: 'Entertainment',
+    desc: 'A FAKE gambling site for FUN, no REAL MONEY USED.',
+    logo: 'https://codehs.com/uploads/fda765c996129676c61b158dd9816895',
+    url: 'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/SN-Casino/index.html',
+    cssUrl: 'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/SN-Casino/style.css',
+    jsUrl:  'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/SN-Casino/app.js',
+    accent: '#d4a000',
+    glow: 'rgba(212,160,0,0.45)',
+    banner: 'linear-gradient(135deg,#1a1000,#d4a000)'
+  },
+  {
+    id: 'sntools',
+    name: 'SN Tools',
+    sub: 'Utilities',
+    desc: 'A bunch of useful tools for developers and more.',
+    logo: 'https://codehs.com/uploads/8fb15ed88f915194ff510551f016176e',
+    url: 'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/SN-Tools/index.html',
+    accent: '#4facfe',
+    glow: 'rgba(79,172,254,0.45)',
+    banner: 'linear-gradient(135deg,#001a33,#4facfe)'
+  }
+];
+
+var active = null;
+
+// ── BUILD CARDS
+var grid = document.getElementById('grid');
+
+PROJECTS.forEach(function(p) {
+  var card = document.createElement('div');
+  card.className = 'card';
+  card.style.setProperty('--accent', p.accent);
+  card.style.setProperty('--glow', p.glow);
+
+  card.addEventListener('mouseenter', function() {
+    card.style.borderColor = p.accent;
+    card.style.boxShadow = '0 0 50px ' + p.glow + ', 0 16px 40px rgba(0,0,0,0.6)';
+  });
+  card.addEventListener('mouseleave', function() {
+    card.style.borderColor = '';
+    card.style.boxShadow = '';
+  });
+
+  // Banner
+  var banner = document.createElement('div');
+  banner.className = 'card-banner';
+  var bg = document.createElement('div');
+  bg.className = 'card-banner-inner';
+  bg.style.background = p.banner;
+  banner.appendChild(bg);
+
+  var logo = document.createElement('img');
+  logo.className = 'card-logo';
+  logo.src = p.logo;
+  logo.alt = p.name;
+  logo.onerror = function() {
+    logo.style.display = 'none';
+    var fb = document.createElement('div');
+    fb.style.cssText = 'width:56px;height:56px;border-radius:14px;background:rgba(0,0,255,0.15);border:1px solid rgba(0,0,255,0.4);display:flex;align-items:center;justify-content:center;font-size:24px;position:relative;z-index:1;';
+    fb.textContent = '🚀';
+    banner.appendChild(fb);
+  };
+  banner.appendChild(logo);
+  card.appendChild(banner);
+
+  // Body
+  var body = document.createElement('div');
+  body.className = 'card-body';
+
+  var name = document.createElement('div');
+  name.className = 'card-name';
+  name.textContent = p.name;
+  body.appendChild(name);
+
+  var desc = document.createElement('div');
+  desc.className = 'card-desc';
+  desc.textContent = p.desc;
+  body.appendChild(desc);
+
+  var btn = document.createElement('button');
+  btn.className = 'card-btn';
+  btn.style.background = p.accent;
+  btn.style.boxShadow = '0 0 28px ' + p.glow + ', 0 4px 14px rgba(0,0,0,0.4)';
+  btn.textContent = p.external ? 'OPEN ↗' : 'LAUNCH →';
+  btn.addEventListener('click', function(e) { e.stopPropagation(); openModal(p); });
+  body.appendChild(btn);
+
+  card.appendChild(body);
+  card.addEventListener('click', function() { openModal(p); });
+  grid.appendChild(card);
+});
+
+// ── MODAL
+function openModal(p) {
+  active = p;
+  document.getElementById('modal-banner-bg').style.background = p.banner;
+
+  var mlogo = document.getElementById('modal-logo');
+  mlogo.src = p.logo;
+  mlogo.style.display = 'block';
+  mlogo.onerror = function() { mlogo.style.display = 'none'; };
+
+  document.getElementById('modal-name').textContent = p.name;
+  document.getElementById('modal-sub').textContent = p.sub;
+  document.getElementById('modal-desc').textContent = p.desc;
+
+  var st = document.getElementById('modal-status');
+  st.textContent = ''; st.className = '';
+
+  var go = document.getElementById('modal-go');
+  go.disabled = false;
+  go.textContent = p.external ? 'OPEN IN NEW TAB ↗' : 'LAUNCH PROJECT';
+  go.style.background = p.accent;
+  go.style.boxShadow = '0 0 32px ' + p.glow + ', 0 4px 16px rgba(0,0,0,0.4)';
+
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+  active = null;
+}
+
+document.getElementById('overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
+
+// ── LAUNCH
+function doLaunch() {
+  if (!active) return;
+  var p = active;
+
+  if (p.external) {
+    window.open(p.url, '_blank');
+    closeModal();
+    return;
+  }
+
+  var st = document.getElementById('modal-status');
+  var go = document.getElementById('modal-go');
+  st.textContent = 'Fetching project files…';
+  st.className = '';
+  go.disabled = true;
+  go.textContent = 'Loading…';
+
+  var fetches = [
+    fetch(p.url).then(function(r) {
+      if (!r.ok) throw new Error('HTML fetch failed (' + r.status + ')');
+      return r.text();
+    })
+  ];
+  if (p.cssUrl) {
+    fetches.push(fetch(p.cssUrl).then(function(r) {
+      if (!r.ok) throw new Error('CSS fetch failed (' + r.status + ')');
+      return r.text();
+    }));
+  }
+  if (p.jsUrl) {
+    fetches.push(fetch(p.jsUrl).then(function(r) {
+      if (!r.ok) throw new Error('JS fetch failed (' + r.status + ')');
+      return r.text();
+    }));
+  }
+
+  Promise.all(fetches).then(function(results) {
+    var html = results[0];
+    var css  = results[1] || null;
+    var js   = results[2] || null;
+
+    if (css) {
+      html = html.replace(
+        /<link[^>]+href=["']style\.css["'][^>]*\/?>/gi,
+        '<style>' + css + '<\/style>'
+      );
+    }
+    if (js) {
+      html = html.replace(
+        /<script[^>]+src=["']app\.js["'][^>]*><\/script>/gi,
+        '<script>' + js + '<\/script>'
+      );
+    }
+
+    closeModal();
+    document.getElementById('spin').style.borderTopColor = p.accent;
+    document.getElementById('loadlabel').textContent = 'Loading ' + p.name + '…';
+    document.getElementById('loadscreen').classList.add('on');
+
+    var frame = document.getElementById('appframe');
+    frame.classList.add('on');
+    var doc = frame.contentDocument || frame.contentWindow.document;
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    frame.addEventListener('load', function() {
+      document.getElementById('loadscreen').classList.remove('on');
+    }, { once: true });
+    setTimeout(function() {
+      document.getElementById('loadscreen').classList.remove('on');
+    }, 4000);
+
+    document.getElementById('launcher').style.display = 'none';
+
+  }).catch(function(err) {
+    st.textContent = 'Error: ' + err.message;
+    st.className = 'err';
+    go.disabled = false;
+    go.textContent = 'RETRY';
+  });
+}
+</script>
+</body>
+</html>
