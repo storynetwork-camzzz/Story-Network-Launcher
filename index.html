@@ -506,7 +506,7 @@ var PROJECTS = [
     sub: 'Games & Tools',
     desc: "USE ME TO PLAY GAMES! Built off of GN Math, there's more content, better organization, and better settings.",
     logo: 'https://codehs.com/uploads/84799a0bb8e09668879b73acd5e7abaa',
-    url: 'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/Story-Network-GN-Math-2026@b493b04/index.html',
+    url: 'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/Story-Network-GN-Math-2026@latest/index.html',
     accent: '#0000ff',
     glow: 'rgba(0,0,255,0.45)',
     banner: 'linear-gradient(135deg,#000033,#0000ff)'
@@ -517,7 +517,7 @@ var PROJECTS = [
     sub: 'Browser Engine',
     desc: "Sort of working unbl*cker for Securly monitored Chromebooks.",
     logo: 'https://codehs.com/uploads/ee77546924d708500625cd4e58cca53d',
-    url: 'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/Zicon/index.html',
+    url: 'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/Zicon@latest/index.html',
     accent: '#58c52d',
     glow: 'rgba(88,197,45,0.45)',
     banner: 'linear-gradient(135deg,#050a02,#58c52d)'
@@ -528,9 +528,9 @@ var PROJECTS = [
     sub: 'Entertainment',
     desc: 'A FAKE gambling site for FUN, no REAL MONEY USED.',
     logo: 'https://codehs.com/uploads/fda765c996129676c61b158dd9816895',
-    url: 'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/SN-Casino/index.html',
-    cssUrl: 'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/SN-Casino/style.css',
-    jsUrl:  'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/SN-Casino/app.js',
+    url: 'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/SN-Casino@latest/index.html',
+    cssUrl: 'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/SN-Casino@latest/style.css',
+    jsUrl:  'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/SN-Casino@latest/app.js',
     accent: '#d4a000',
     glow: 'rgba(212,160,0,0.45)',
     banner: 'linear-gradient(135deg,#1a1000,#d4a000)'
@@ -541,7 +541,7 @@ var PROJECTS = [
     sub: 'Utilities',
     desc: 'A bunch of useful tools for developers and more.',
     logo: 'https://codehs.com/uploads/8fb15ed88f915194ff510551f016176e',
-    url: 'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/SN-Tools/index.html',
+    url: 'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/SN-Tools@latest/index.html',
     accent: '#4facfe',
     glow: 'rgba(79,172,254,0.45)',
     banner: 'linear-gradient(135deg,#001a33,#4facfe)'
@@ -673,47 +673,20 @@ function doLaunch() {
   go.disabled = true;
   go.textContent = 'Loading…';
 
-  var fetches = [
-    fetch(p.url).then(function(r) {
-      if (!r.ok) throw new Error('HTML fetch failed (' + r.status + ')');
-      return r.text();
-    })
-  ];
-  if (p.cssUrl) {
-    fetches.push(fetch(p.cssUrl).then(function(r) {
-      if (!r.ok) throw new Error('CSS fetch failed (' + r.status + ')');
-      return r.text();
-    }));
-  }
-  if (p.jsUrl) {
-    fetches.push(fetch(p.jsUrl).then(function(r) {
-      if (!r.ok) throw new Error('JS fetch failed (' + r.status + ')');
-      return r.text();
-    }));
-  }
+  fetch(p.url).then(function(r) {
+    if (!r.ok) throw new Error('Fetch failed (' + r.status + ')');
+    return r.text();
+  }).then(function(html) {
 
-  Promise.all(fetches).then(function(results) {
-    var html = results[0];
-    var css  = results[1] || null;
-    var js   = results[2] || null;
-
-    if (css) {
-      html = html.replace(
-        /<link[^>]+href=["']style\.css["'][^>]*\/?>/gi,
-        '<style>' + css + '<\/style>'
-      );
-    }
-    if (js) {
-      html = html.replace(
-        /<script[^>]+src=["']app\.js["'][^>]*><\/script>/gi,
-        '<script>' + js + '<\/script>'
-      );
-    }
+    // Inject <base> tag so fonts, CSS, JS, images all resolve from CDN origin
+    var baseUrl = p.url.substring(0, p.url.lastIndexOf('/') + 1);
+    html = html.replace(/<head([^>]*)>/i, '<head$1><base href="' + baseUrl + '">');
 
     closeModal();
     document.getElementById('spin').style.borderTopColor = p.accent;
     document.getElementById('loadlabel').textContent = 'Loading ' + p.name + '…';
     document.getElementById('loadscreen').classList.add('on');
+    document.getElementById('launcher').style.display = 'none';
 
     var frame = document.getElementById('appframe');
     frame.classList.add('on');
@@ -728,8 +701,6 @@ function doLaunch() {
     setTimeout(function() {
       document.getElementById('loadscreen').classList.remove('on');
     }, 4000);
-
-    document.getElementById('launcher').style.display = 'none';
 
   }).catch(function(err) {
     st.textContent = 'Error: ' + err.message;
