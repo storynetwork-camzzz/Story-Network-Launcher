@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" width="1280" height="800">
+<foreignObject x="0" y="0" width="1280" height="800">
+<body xmlns="http://www.w3.org/1999/xhtml" style="margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#02020a">
+<style>
+<![CDATA[
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;font-family:'Montserrat',sans-serif}
+:root{--bg:#02020a;--text-primary:#dde0ff;--text-muted:#4a4a88;--blue:#0000ff;--border:rgba(0,0,255,0.35)}
+html,body{width:100%;height:100%;color:var(--text-primary);overflow:hidden}
+#bgCanvas{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#launcher{position:relative;z-index:2;width:100%;height:100vh;display:flex;flex-direction:column}
+header{flex-shrink:0;padding:22px 60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:#02020e;position:relative;z-index:10}
+.htitle{font-size:1.35rem;font-weight:900;letter-spacing:0.06em;color:#fff;text-shadow:0 0 24px rgba(0,0,255,0.5)}
+.htitle span{color:var(--blue)}
+#back-btn{display:none;padding:9px 18px;border-radius:11px;border:1px solid rgba(0,0,255,0.4);background:rgba(0,0,255,0.08);color:#fff;font-size:0.75rem;font-weight:800;cursor:pointer;text-transform:uppercase}
+#back-btn.visible{display:block}
+#view-home,#view-folder{flex:1;padding:36px 60px;overflow-y:auto}
+#folder-grid,#project-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:18px}
+.folder-card, .card{background:rgba(8,8,28,0.95);border:1px solid var(--border);border-radius:20px;padding:20px;cursor:pointer;transition:transform 0.2s, border-color 0.2s}
+.folder-card:hover, .card:hover{transform:translateY(-5px);border-color:var(--blue);box-shadow:0 10px 30px rgba(0,0,0,0.5)}
+.btn{margin-top:14px;width:100%;padding:10px;border-radius:11px;border:none;color:#fff;font-size:0.76rem;font-weight:900;cursor:pointer;background:var(--blue);text-transform:uppercase}
+#overlay{position:fixed;inset:0;z-index:500;background:rgba(2,2,10,0.85);display:none;align-items:center;justify-content:center}
+#overlay.open{display:flex}
+#modal{width:min(500px,88vw);background:#08081c;border:1px solid var(--blue);border-radius:22px;padding:30px;box-shadow:0 0 50px rgba(0,0,255,0.2)}
+#appframe{display:none;position:fixed;inset:0;z-index:9999;width:100%;height:100%;border:none;background:#fff}
+#loadscreen{display:none;position:fixed;inset:0;z-index:9998;background:#02020a;flex-direction:column;align-items:center;justify-content:center}
+.spin{width:40px;height:40px;border:3px solid rgba(0,0,255,0.1);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+]]>
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&amp;display=swap" rel="stylesheet"/>
+<canvas id="bgCanvas"></canvas>
+<div id="launcher">
+  <header>
+    <div class="htitle">Story <span>Network</span></div>
+    <button id="back-btn" onclick="goHome()">&#8592; Home</button>
+  </header>
+  <div id="view-home"><div id="folder-grid"></div></div>
+  <div id="view-folder" style="display:none">
+    <h2 id="fv-title" style="margin-bottom:20px"></h2>
+    <div id="project-grid"></div>
+  </div>
+</div>
+<div id="overlay" onclick="closeModal()">
+  <div id="modal" onclick="event.stopPropagation()">
+    <h2 id="modal-name"></h2>
+    <p id="modal-desc" style="margin:20px 0; color:var(--text-muted); line-height:1.6"></p>
+    <button class="btn" onclick="doLaunch()">Launch Project</button>
+  </div>
+</div>
+<div id="loadscreen"><div class="spin"></div><div style="margin-top:15px; color:#4a4a88; letter-spacing:2px">LOADING...</div></div>
+<iframe id="appframe"></iframe>
+<script>
+<![CDATA[
+(function(){
+  var c=document.getElementById('bgCanvas'),ctx=c.getContext('2d');
+  function res(){c.width=window.innerWidth;c.height=window.innerHeight}
+  res();window.onresize=res;
+  var pts=[];for(var i=0;i<50;i++)pts.push({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-.5)*.5,vy:(Math.random()-.5)*.5});
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    ctx.fillStyle='rgba(0,0,255,0.5)';
+    pts.forEach(p=>{
+      ctx.beginPath();ctx.arc(p.x,p.y,2,0,Math.PI*2);ctx.fill();
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0||p.x>c.width)p.vx*=-1;if(p.y<0||p.y>c.height)p.vy*=-1;
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+const FOLDERS=[
+  {id:'games',name:'Games',color:'#3b82f6',projects:[
+    {name:'SN GN Math 2026',desc:'USE ME TO PLAY GAMES! Better organization and settings.',url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/Story-Network-GN-Math-2026@latest/index.html',accent:'#3b82f6'},
+    {name:'SN Smash Bros',desc:'A Smash Bros inspired fighting game.',url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/SN-Smash-Bros@latest/index.html',accent:'#ff4444'}
+  ]},
+  {id:'utilities',name:'Utilities',color:'#4facfe',projects:[
+    {name:'SN Tools',desc:'Useful tools for developers.',url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/SN-Tools@latest/index.html',accent:'#4facfe'}
+  ]}
+];
+
+function renderFolders(){
+  const grid=document.getElementById('folder-grid');
+  FOLDERS.forEach(f=>{
+    const card=document.createElement('div');
+    card.className='folder-card';
+    card.innerHTML=`<h3 style="color:${f.color}">${f.name}</h3><p style="font-size:0.8rem;color:#4a4a88;margin-top:5px">${f.projects.length} Projects</p><button class="btn" style="background:${f.color}">Open</button>`;
+    card.onclick=()=>openFolder(f);
+    grid.appendChild(card);
+  });
+}
+
+function openFolder(f){
+  document.getElementById('view-home').style.display='none';
+  document.getElementById('view-folder').style.display='block';
+  document.getElementById('back-btn').classList.add('visible');
+  document.getElementById('fv-title').textContent=f.name;
+  const pg=document.getElementById('project-grid');
+  pg.innerHTML='';
+  f.projects.forEach(p=>{
+    const card=document.createElement('div');
+    card.className='card';
+    card.innerHTML=`<h3>${p.name}</h3><p style="font-size:0.8rem;color:#4a4a88;margin:10px 0">${p.desc}</p><button class="btn" style="background:${p.accent}">Launch</button>`;
+    card.onclick=()=>openModal(p);
+    pg.appendChild(card);
+  });
+}
+
+function goHome(){
+  document.getElementById('view-home').style.display='block';
+  document.getElementById('view-folder').style.display='none';
+  document.getElementById('back-btn').classList.remove('visible');
+}
+
+let active=null;
+function openModal(p){active=p;document.getElementById('modal-name').textContent=p.name;document.getElementById('modal-desc').textContent=p.desc;document.getElementById('overlay').classList.add('open')}
+function closeModal(){document.getElementById('overlay').classList.remove('open')}
+
+function doLaunch(){
+  if(!active)return;
+  const loader=document.getElementById('loadscreen');
+  const frame=document.getElementById('appframe');
+  loader.style.display='flex';
+  frame.style.display='block';
+  frame.src=active.url;
+  frame.onload=()=>loader.style.display='none';
+  closeModal();
+}
+
+renderFolders();
+]]>
+</script>
+</body>
+</foreignObject>
+</svg>
