@@ -1,0 +1,219 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">
+<foreignObject width="100%" height="100%">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<style>
+/* <![CDATA[ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;font-family:'Montserrat',sans-serif}
+:root{
+  --bg:#02020a;
+  --text-primary:#dde0ff;
+  --text-muted:#4a4a88;
+  --blue:#0000ff;
+  --border:rgba(0,0,255,0.35);
+  --blue-glow:rgba(0,0,255,0.3);
+}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--text-primary);overflow:hidden}
+#bgCanvas{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#launcher{position:relative;z-index:2;width:100%;height:100vh;display:flex;flex-direction:column}
+
+header{
+  flex-shrink:0;padding:22px 60px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(0,0,255,0.3);background:#02020e;box-shadow:0 2px 24px rgba(0,0,255,0.08);
+  position:relative;z-index:10;
+}
+.htitle{font-size:1.35rem;font-weight:900;letter-spacing:0.06em;color:#fff}
+.htitle span{color:var(--blue)}
+#back-btn{
+  display:none;padding:9px 18px;border-radius:11px;border:1px solid rgba(0,0,255,0.4);
+  background:rgba(0,0,255,0.08);color:var(--text-primary);font-size:0.75rem;font-weight:800;
+  text-transform:uppercase;cursor:pointer;
+}
+#back-btn.visible{display:flex}
+
+#view-home,#view-folder{flex:1;padding:36px 60px;overflow-y:auto}
+#view-folder{display:none}
+
+#folder-grid,#project-grid{
+  display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:18px;
+}
+
+.folder-card, .card{
+  background:rgba(8,8,28,0.97);border:1px solid var(--border);border-radius:20px;
+  padding:20px;transition:0.22s ease;cursor:pointer;display:flex;flex-direction:column;
+  box-shadow:0 0 40px rgba(0,0,255,0.05);
+}
+.folder-card:hover, .card:hover{
+  transform:translateY(-5px);border-color:var(--blue);
+  box-shadow:0 0 50px var(--blue-glow),0 16px 40px rgba(0,0,0,0.6);
+}
+
+.card-name{font-size:0.95rem;font-weight:900;margin-bottom:6px;text-shadow:0 0 14px rgba(0,0,255,0.3)}
+.card-desc{font-size:0.73rem;font-weight:500;color:var(--text-muted);line-height:1.6;margin-bottom:12px}
+
+.folder-card-btn, .card-btn{
+  margin-top:auto;width:100%;padding:10px;border-radius:11px;border:none;
+  color:#fff;font-size:0.76rem;font-weight:900;text-transform:uppercase;
+  cursor:pointer;background:var(--blue);transition:opacity 0.15s;
+}
+.folder-card-btn:hover, .card-btn:hover{opacity:0.8}
+
+#overlay{position:fixed;inset:0;z-index:500;background:rgba(2,2,10,0.85);display:none;align-items:center;justify-content:center}
+#overlay.open{display:flex}
+#modal{width:min(500px, 90vw);background:#08081c;border:1px solid var(--blue);border-radius:22px;padding:30px;text-align:center}
+
+#appframe{display:none;position:fixed;inset:0;z-index:9999;width:100%;height:100%;border:none;background:#000}
+#close-app{
+  position:fixed;top:10px;right:10px;z-index:10000;display:none;
+  background:red;color:white;border:none;padding:10px 15px;font-weight:900;cursor:pointer;border-radius:8px;
+}
+
+footer{flex-shrink:0;padding:12px 60px;display:flex;justify-content:space-between;border-top:1px solid rgba(0,0,255,0.18);background:#02020e}
+.footer-text{font-size:0.64rem;font-weight:700;color:var(--text-muted);text-transform:uppercase}
+/* ]]> */
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&amp;display=swap" rel="stylesheet"/>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+<div id="launcher">
+  <header>
+    <div class="htitle">Story <span>Network</span></div>
+    <button id="back-btn" onclick="goHome()">← Back to Home</button>
+  </header>
+  <div id="view-home"><div id="folder-grid"></div></div>
+  <div id="view-folder">
+    <h2 id="fv-title" style="margin-bottom:20px; font-weight:900; font-size:1.5rem"></h2>
+    <div id="project-grid"></div>
+  </div>
+  <footer>
+    <div class="footer-text">© 2026 Story Network</div>
+    <div class="footer-text" id="footer-count"></div>
+  </footer>
+</div>
+
+<div id="overlay" onclick="closeModal()">
+  <div id="modal" onclick="event.stopPropagation()">
+    <h2 id="modal-name"></h2>
+    <p id="modal-desc" style="color:#4a4a88; margin:20px 0; font-size:0.85rem; line-height:1.6"></p>
+    <button class="card-btn" id="modal-launch">LAUNCH PROJECT</button>
+  </div>
+</div>
+
+<button id="close-app" onclick="closeApp()">EXIT PROJECT</button>
+<iframe id="appframe"></iframe>
+
+<script>
+// <![CDATA[
+(function(){
+  var c=document.getElementById('bgCanvas'),ctx=c.getContext('2d');
+  function res(){c.width=window.innerWidth;c.height=window.innerHeight}
+  res();window.addEventListener('resize',res);
+  var pts=[];
+  for(var i=0;i<55;i++)pts.push({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-.5)*.5,vy:(Math.random()-.5)*.5,r:Math.random()*2+.5,o:Math.random()*.5+.1});
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    pts.forEach(p=>{
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba(0,0,255,'+p.o+')';ctx.fill();
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0||p.x>c.width)p.vx*=-1;if(p.y<0||p.y>c.height)p.vy*=-1;
+    });
+    for(var a=0;a<pts.length;a++)for(var b=a+1;b<pts.length;b++){
+      var dx=pts[a].x-pts[b].x,dy=pts[a].y-pts[b].y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<140){ctx.beginPath();ctx.moveTo(pts[a].x,pts[a].y);ctx.lineTo(pts[b].x,pts[b].y);ctx.strokeStyle='rgba(0,0,255,'+(0.1*(1-d/140))+')';ctx.lineWidth=.6;ctx.stroke()}
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+const FOLDERS=[
+  {id:'games',name:'Games',color:'#3b82f6',projects:[
+    {name:'SN GN Math 2026',desc:"Built off of GN Math with more content and better organization.",url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/Story-Network-GN-Math-2026@latest/index.html'},
+    {name:'SN Smash Bros',desc:'A Smash Bros inspired fighting game by Story Network.',url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/SN-Smash-Bros@latest/index.html'}
+  ]},
+  {id:'other',name:'Other',color:'#a855f7',projects:[
+    {name:'SN Chat',desc:'A Chatting Website made by Camzzz.',url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/Story-Network-Chat@b5daa59/index.html'},
+    {name:'SN Casino',desc:'A FAKE gambling site for FUN, no REAL MONEY USED.',url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/SN-Casino@latest/index.html'}
+  ]},
+  {id:'proxy',name:'Proxy',color:'#22c55e',projects:[
+    {name:'Zicon',desc:"Browser Engine unbl*cker for Chromebooks.",url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/Zicon@latest/index.html'},
+    {name:'VSCL',desc:'Proxy tool for Securly monitored Chromebooks.',url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/VSCL@latest/index.html'},
+    {name:'Raz.Launcher',desc:'A proxy launcher — currently non-functional.',url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/raz.launcher@latest/index.html'}
+  ]},
+  {id:'utilities',name:'Utilities',color:'#4facfe',projects:[
+    {name:'SN Code Runner',desc:'Run code snippets directly in your browser.',url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/SN-Code-Runner@latest/index.html'},
+    {name:'SN Tools',desc:'Useful tools for developers.',url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/SN-Tools@latest/index.html'},
+    {name:'CodeHS Launching',desc:'Launcher utility for CodeHS projects.',url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/CodeHS-Launching@latest/index.html'}
+  ]}
+];
+
+function init(){
+  const grid=document.getElementById('folder-grid');
+  let total=0;
+  FOLDERS.forEach(f=>{
+    total += f.projects.length;
+    const card=document.createElement('div');
+    card.className='folder-card';
+    card.style.borderColor=f.color+'66';
+    card.innerHTML=`<div class="card-name" style="color:${f.color}">${f.name}</div><div class="card-desc">${f.projects.length} Projects</div><button class="folder-card-btn" style="background:${f.color}">Open Folder</button>`;
+    card.onclick=()=>openFolder(f);
+    grid.appendChild(card);
+  });
+  document.getElementById('footer-count').textContent=FOLDERS.length+' Folders · '+total+' Projects';
+}
+
+function openFolder(f){
+  document.getElementById('view-home').style.display='none';
+  document.getElementById('view-folder').style.display='block';
+  document.getElementById('back-btn').className='visible';
+  document.getElementById('fv-title').textContent=f.name;
+  document.getElementById('fv-title').style.color=f.color;
+  const pg=document.getElementById('project-grid');
+  pg.innerHTML='';
+  f.projects.forEach(p=>{
+    const card=document.createElement('div');
+    card.className='card';
+    card.innerHTML=`<div class="card-name">${p.name}</div><div class="card-desc">${p.desc}</div><button class="card-btn">Launch</button>`;
+    card.onclick=()=>openModal(p);
+    pg.appendChild(card);
+  });
+}
+
+function goHome(){
+  document.getElementById('view-home').style.display='block';
+  document.getElementById('view-folder').style.display='none';
+  document.getElementById('back-btn').className='';
+}
+
+function openModal(p){
+  document.getElementById('modal-name').textContent=p.name;
+  document.getElementById('modal-desc').textContent=p.desc;
+  document.getElementById('modal-launch').onclick=()=>launch(p.url);
+  document.getElementById('overlay').className='open';
+}
+
+function closeModal(){document.getElementById('overlay').className=''}
+
+function launch(url){
+  const frame=document.getElementById('appframe');
+  frame.src=url;
+  frame.style.display='block';
+  document.getElementById('close-app').style.display='block';
+  closeModal();
+}
+
+function closeApp(){
+  const frame=document.getElementById('appframe');
+  frame.src='about:blank';
+  frame.style.display='none';
+  document.getElementById('close-app').style.display='none';
+}
+
+init();
+// ]]>
+</script>
+</body>
+</html>
+</foreignObject>
+</svg>
