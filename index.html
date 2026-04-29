@@ -345,24 +345,26 @@ var FOLDERS=[
      accent:'#d4a000',banner:'linear-gradient(135deg,#1a1000,#d4a000)'}
    ]},
   {id:'proxy',name:'Proxy',color:'#22c55e',
-   projects:[
-    {id:'zicon',name:'Zicon',sub:'Browser Engine',
-     desc:"Sort of working unbl*cker for Securly monitored Chromebooks.",
-     logo:'https://codehs.com/uploads/ee77546924d708500625cd4e58cca53d',
-     url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/Zicon@latest/index.html',
-     accent:'#58c52d',banner:'linear-gradient(135deg,#050a02,#58c52d)'},
-    {id:'vscl',name:'VSCL',sub:'Proxy',
-     desc:'A proxy tool for Securly monitored Chromebooks.',
-     logo:'https://codehs.com/uploads/d77e7ab104f2ecb28b755b826b736a99',
-     url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/VSCL@latest/index.html',
-     accent:'#58c52d',banner:'linear-gradient(135deg,#050a02,#58c52d)'},
-    {id:'razlauncher',name:'Raz.Launcher',sub:'Proxy',
-     desc:'A proxy launcher — currently non-functional.',
-     logo:'https://codehs.com/uploads/c16ee68ff85fc63cb74881f12e9876af',
-     url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/raz.launcher@latest/index.html',
-     accent:'#e040a0',banner:'linear-gradient(135deg,#1a0010,#e040a0)',
-     warn:'Dysfunctional'}
-   ]},
+ projects:[
+  {id:'zicon',name:'Zicon',sub:'Browser Engine',
+   desc:"Sort of working unbl*cker for Securly monitored Chromebooks.",
+   logo:'https://codehs.com/uploads/ee77546924d708500625cd4e58cca53d',
+   url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/Zicon@latest/index.html',
+   accent:'#58c52d',banner:'linear-gradient(135deg,#050a02,#58c52d)',
+   warn:'Dysfunctional'},  // ← warn moved inside, comma after }
+  {id:'vscl',name:'VSCL',sub:'Proxy',
+   desc:'A proxy tool for Securly monitored Chromebooks.',
+   logo:'https://codehs.com/uploads/d77e7ab104f2ecb28b755b826b736a99',
+   url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/VSCL@latest/index.html',
+   accent:'#58c52d',banner:'linear-gradient(135deg,#050a02,#58c52d)',
+   warn:'Dysfunctional'},  // ← warn moved inside, comma after }
+  {id:'razlauncher',name:'Raz.Launcher',sub:'Proxy',
+   desc:'A proxy launcher — currently non-functional.',
+   logo:'https://codehs.com/uploads/c16ee68ff85fc63cb74881f12e9876af',
+   url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/raz.launcher@latest/index.html',
+   accent:'#e040a0',banner:'linear-gradient(135deg,#1a0010,#e040a0)',
+   warn:'Dysfunctional'}   // ← this one was already correct
+ ]},
   {id:'utilities',name:'Utilities',color:'#4facfe',
    projects:[
     {id:'sncoderunner',name:'SN Code Runner',sub:'Utilities',
@@ -433,12 +435,6 @@ FOLDERS.forEach(function(f){
   meta.textContent=f.projects.length+(f.projects.length===1?' project':' projects');
   body.appendChild(meta);
 
-  var chips=document.createElement('div');chips.className='folder-card-items';
-  f.projects.forEach(function(p){
-    var chip=document.createElement('div');chip.className='folder-item-chip';chip.textContent=p.name;
-    chips.appendChild(chip);
-  });
-  body.appendChild(chips);
 
   var btn=document.createElement('button');btn.className='folder-card-btn';
   btn.style.background=f.color;
