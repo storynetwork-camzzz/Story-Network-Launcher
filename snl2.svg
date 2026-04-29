@@ -1,0 +1,218 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 800" width="1280" height="800">
+<foreignObject x="0" y="0" width="1280" height="800">
+<body xmlns="http://www.w3.org/1999/xhtml" style="margin:0;padding:0;width:100%;height:100%;overflow:hidden">
+<style>
+<![CDATA[
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;font-family:'Montserrat',sans-serif}
+:root{
+  --bg:#02020a;
+  --text-primary:#dde0ff;
+  --text-muted:#4a4a88;
+  --blue:#0000ff;
+  --border:rgba(0,0,255,0.35);
+  --blue-glow:rgba(0,0,255,0.3);
+}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--text-primary);overflow:hidden}
+#bgCanvas{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#launcher{position:relative;z-index:2;width:100%;height:100vh;display:flex;flex-direction:column}
+header{flex-shrink:0;padding:22px 60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,0,255,0.3);background:#02020e;box-shadow:0 2px 24px rgba(0,0,255,0.08);position:relative;z-index:10}
+.header-left{display:flex;align-items:center;gap:16px}
+.hlogo img{width:56px;height:56px;object-fit:contain;display:block;filter:drop-shadow(0 0 12px rgba(0,0,255,0.5))}
+.htitle{font-size:1.35rem;font-weight:900;letter-spacing:0.06em;color:#fff;text-shadow:0 0 24px rgba(0,0,255,0.5)}
+.htitle span{color:var(--blue)}
+.hsub{font-size:0.68rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted);margin-top:3px}
+.header-right{display:flex;align-items:center;gap:12px}
+#back-btn{display:none;align-items:center;gap:8px;padding:9px 18px;border-radius:11px;border:1px solid rgba(0,0,255,0.4);background:rgba(0,0,255,0.08);color:var(--text-primary);font-size:0.75rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:background 0.2s,border-color 0.2s,color 0.2s}
+#back-btn.visible{display:flex}
+#view-home,#view-folder{flex:1;padding:36px 60px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(0,0,255,0.3) transparent}
+#view-home::-webkit-scrollbar,#view-folder::-webkit-scrollbar{width:4px}
+#view-home::-webkit-scrollbar-thumb,#view-folder::-webkit-scrollbar-thumb{background:rgba(0,0,255,0.3);border-radius:4px}
+#view-folder{display:none}
+.folder-view-header{display:flex;align-items:center;gap:14px;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid rgba(0,0,255,0.15)}
+.folder-view-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.folder-view-title{font-size:1.3rem;font-weight:900;letter-spacing:0.04em;color:#fff;text-shadow:0 0 20px rgba(0,0,255,0.3)}
+.folder-view-count{font-size:0.65rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-muted);margin-top:3px}
+#folder-grid,#project-grid{width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.folder-card{background:rgba(8,8,28,0.97);border:1px solid var(--border);border-radius:20px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;box-shadow:0 0 40px rgba(0,0,255,0.05);transition:transform 0.22s ease,border-color 0.22s ease,box-shadow 0.22s ease}
+.folder-card:hover{transform:translateY(-5px) scale(1.02);box-shadow:0 16px 40px rgba(0,0,0,0.6)}
+.folder-card-body{padding:20px 18px 18px;display:flex;flex-direction:column;flex:1}
+.folder-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+.folder-card-name{font-size:0.95rem;font-weight:900;letter-spacing:0.04em;text-shadow:0 0 14px rgba(0,0,255,0.3);line-height:1.2}
+.folder-card-icon-svg{flex-shrink:0;opacity:0.5;margin-top:1px;transition:opacity 0.2s}
+.folder-card:hover .folder-card-icon-svg{opacity:0.85}
+.folder-card-meta{font-size:0.7rem;font-weight:600;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px}
+.folder-card-btn{margin-top:14px;width:100%;padding:10px;border-radius:11px;border:none;color:#fff;font-size:0.76rem;font-weight:900;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;position:relative;overflow:hidden;transition:opacity 0.15s,transform 0.1s;display:flex;align-items:center;justify-content:center;gap:7px}
+.folder-card-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.14) 0%,transparent 60%);pointer-events:none}
+.folder-card-btn:hover{opacity:0.85}
+.folder-card-btn:active{transform:scale(0.98)}
+.folder-card-arrow{transition:transform 0.2s}
+.folder-card:hover .folder-card-arrow{transform:translateX(3px)}
+.card-wrap{position:relative}
+.card-warn{position:absolute;top:10px;right:10px;z-index:5;display:flex;align-items:center;gap:5px;padding:4px 9px;border-radius:20px;background:rgba(255,40,40,0.18);border:1px solid rgba(255,60,60,0.55);font-size:0.58rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:#ff6060;backdrop-filter:blur(4px);pointer-events:none}
+.card-warn-dot{width:5px;height:5px;border-radius:50%;background:#ff4444;flex-shrink:0;box-shadow:0 0 6px rgba(255,60,60,0.8);animation:pulse-dot 1.8s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.35}}
+.card{background:rgba(8,8,28,0.97);border:1px solid var(--border);border-radius:20px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;box-shadow:0 0 40px rgba(0,0,255,0.05);transition:transform 0.22s ease,border-color 0.22s ease,box-shadow 0.22s ease}
+.card:hover{transform:translateY(-5px) scale(1.02);border-color:var(--blue);box-shadow:0 0 50px var(--blue-glow),0 16px 40px rgba(0,0,0,0.6)}
+.card-banner{height:90px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.card-banner-inner{position:absolute;inset:0;opacity:0.22}
+.card-logo{width:52px;height:52px;border-radius:13px;object-fit:contain;position:relative;z-index:1;box-shadow:0 4px 18px rgba(0,0,0,0.6)}
+.card-body{padding:15px 17px 17px;display:flex;flex-direction:column;flex:1}
+.card-name{font-size:0.92rem;font-weight:900;color:#fff;letter-spacing:0.04em;margin-bottom:6px;text-shadow:0 0 14px rgba(0,0,255,0.3)}
+.card-desc{font-size:0.73rem;font-weight:500;color:var(--text-muted);line-height:1.6;flex:1;margin-bottom:13px}
+.card-btn{width:100%;padding:10px;border-radius:11px;border:none;color:#fff;font-size:0.76rem;font-weight:900;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;position:relative;overflow:hidden;transition:opacity 0.15s,transform 0.1s;display:flex;align-items:center;justify-content:center;gap:7px}
+.card-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.14) 0%,transparent 60%);pointer-events:none}
+.card-btn:hover{opacity:0.85}
+.card-btn:active{transform:scale(0.98)}
+.card-btn-arrow{transition:transform 0.2s}
+.card:hover .card-btn-arrow{transform:translateX(3px)}
+#overlay{position:fixed;inset:0;z-index:500;background:rgba(2,2,10,0.85);display:none;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.22s ease}
+#overlay.open{display:flex;opacity:1;pointer-events:all}
+#modal{width:min(520px,88vw);background:rgba(8,8,28,0.99);border:1px solid rgba(0,0,255,0.5);border-radius:22px;overflow:hidden;box-shadow:0 0 80px rgba(0,0,255,0.14),0 32px 64px rgba(0,0,0,0.85);transform:scale(0.92) translateY(20px);transition:transform 0.28s cubic-bezier(0.16,1,0.3,1)}
+#overlay.open #modal{transform:scale(1) translateY(0)}
+#modal-banner{height:110px;position:relative;display:flex;align-items:center;justify-content:center}
+#modal-banner-bg{position:absolute;inset:0;opacity:0.22}
+#modal-logo{width:66px;height:66px;border-radius:16px;object-fit:contain;position:relative;z-index:1;box-shadow:0 4px 24px rgba(0,0,0,0.7)}
+#modal-close{position:absolute;top:13px;right:15px;z-index:5;background:rgba(255,255,255,0.08);border:1px solid rgba(0,0,255,0.3);border-radius:50%;width:32px;height:32px;font-size:15px;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s,color 0.2s}
+#modal-body{padding:22px 28px 26px}
+#modal-tag{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+#modal-tag-dot{width:5px;height:5px;border-radius:50%}
+#modal-sub-text{font-size:0.65rem;font-weight:800;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-muted)}
+#modal-name{font-size:1.2rem;font-weight:900;color:#fff;letter-spacing:0.06em;margin-bottom:12px;text-shadow:0 0 20px rgba(0,0,255,0.4)}
+#modal-desc{font-size:0.84rem;font-weight:500;color:rgba(200,210,230,0.65);line-height:1.7;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid rgba(0,0,255,0.15)}
+#modal-status{font-size:0.72rem;font-weight:700;letter-spacing:0.06em;color:var(--text-muted);min-height:1.1em;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+#modal-status.err{color:#ff3355}
+.modal-row{display:flex;gap:10px}
+#modal-go{flex:1;padding:14px;border-radius:12px;border:none;color:#fff;font-size:0.84rem;font-weight:900;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;position:relative;overflow:hidden;transition:opacity 0.15s,transform 0.1s;display:flex;align-items:center;justify-content:center;gap:8px}
+#modal-go:disabled{opacity:0.35;cursor:not-allowed}
+#loadscreen{display:none;position:fixed;inset:0;z-index:9998;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:18px}
+#loadscreen.on{display:flex}
+.spin{width:40px;height:40px;border-radius:50%;border:3px solid rgba(0,0,255,0.15);border-top-color:var(--blue);animation:spinning 0.8s linear infinite}
+@keyframes spinning{to{transform:rotate(360deg)}}
+.loadlabel{font-size:0.72rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted)}
+#appframe{display:none;position:fixed;inset:0;z-index:9999;width:100%;height:100%;border:none}
+#appframe.on{display:block}
+footer{flex-shrink:0;padding:12px 60px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(0,0,255,0.18);background:#02020e}
+.footer-text{font-size:0.64rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-muted)}
+]]>
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<canvas id="bgCanvas"></canvas>
+<div id="launcher">
+  <header>
+    <div class="header-left">
+      <div class="hlogo"><img src="https://codehs.com/uploads/b9084e2547f1923caa433b97f16c89d1" alt="SN"/></div>
+      <div>
+        <div class="htitle">Story <span>Network</span></div>
+        <div class="hsub" id="header-sub">Project Launcher</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <button id="back-btn" onclick="goHome()">&#8592; Home</button>
+    </div>
+  </header>
+  <div id="view-home">
+    <div id="folder-grid"></div>
+  </div>
+  <div id="view-folder">
+    <div class="folder-view-header">
+      <div class="folder-view-icon" id="fv-icon"></div>
+      <div>
+        <div class="folder-view-title" id="fv-title"></div>
+        <div class="folder-view-count" id="fv-count"></div>
+      </div>
+    </div>
+    <div id="project-grid"></div>
+  </div>
+  <footer>
+    <div class="footer-left"><span class="footer-text">© 2025 Story Network</span></div>
+    <div class="footer-right" id="footer-right"></div>
+  </footer>
+</div>
+
+<div id="overlay">
+  <div id="modal">
+    <div id="modal-banner"><div id="modal-banner-bg"></div><img id="modal-logo" src="" alt=""/><button id="modal-close" onclick="closeModal()">✕</button></div>
+    <div id="modal-body">
+      <div id="modal-tag"><div id="modal-tag-dot"></div><span id="modal-sub-text"></span></div>
+      <div id="modal-name"></div>
+      <div id="modal-desc"></div>
+      <div id="modal-status"></div>
+      <div class="modal-row">
+        <button id="modal-go" onclick="doLaunch()"><span id="modal-go-label">Launch Project</span></button>
+        <button id="modal-cancel" style="background:transparent; color:#4a4a88; border:1px solid #4a4a88; border-radius:12px; padding:10px 15px; cursor:pointer" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="loadscreen"><div class="spin"></div><div class="loadlabel" id="loadlabel">Loading...</div></div>
+<iframe id="appframe"></iframe>
+
+<script>
+<![CDATA[
+(function(){
+  var c=document.getElementById('bgCanvas'),ctx=c.getContext('2d');
+  function resize(){c.width=window.innerWidth;c.height=window.innerHeight}
+  resize();window.addEventListener('resize',resize);
+  var pts=[];
+  for(var i=0;i<55;i++)pts.push({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-.5)*.5,vy:(Math.random()-.5)*.5,r:Math.random()*2+.5,o:Math.random()*.5+.1});
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    for(var i=0;i<pts.length;i++){
+      var p=pts[i];ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba(0,0,255,'+p.o+')';ctx.fill();
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0||p.x>c.width)p.vx*=-1;if(p.y<0||p.y>c.height)p.vy*=-1;
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+const FOLDERS=[
+  {id:'games',name:'Games',color:'#3b82f6',projects:[
+    {name:'SN GN Math 2026',desc:'USE ME TO PLAY GAMES!',url:'https://cdn.jsdelivr.net/gh/storynetwork-camzzz/Story-Network-GN-Math-2026@latest/index.html',accent:'#0000ff'}
+  ]}
+];
+
+function render(){
+  const grid=document.getElementById('folder-grid');
+  grid.innerHTML='';
+  FOLDERS.forEach(f=>{
+    const card=document.createElement('div');card.className='folder-card';
+    card.innerHTML=`<div class="folder-card-body"><div class="folder-card-name" style="color:${f.color}">${f.name}</div><button class="folder-card-btn" style="background:${f.color}">OPEN</button></div>`;
+    card.onclick=()=>openFolder(f);
+    grid.appendChild(card);
+  });
+}
+
+function openFolder(f){
+  document.getElementById('view-home').style.display='none';
+  document.getElementById('view-folder').style.display='block';
+  document.getElementById('back-btn').classList.add('visible');
+  document.getElementById('fv-title').textContent=f.name;
+  const pg=document.getElementById('project-grid');pg.innerHTML='';
+  f.projects.forEach(p=>{
+    const card=document.createElement('div');card.className='card';
+    card.innerHTML=`<div class="card-body"><div class="card-name">${p.name}</div><div class="card-desc">${p.desc}</div><button class="card-btn" style="background:${p.accent}">LAUNCH</button></div>`;
+    card.onclick=()=>openModal(p);
+    pg.appendChild(card);
+  });
+}
+
+function goHome(){
+  document.getElementById('view-home').style.display='block';
+  document.getElementById('view-folder').style.display='none';
+  document.getElementById('back-btn').classList.remove('visible');
+}
+
+let active=null;
+function openModal(p){active=p;document.getElementById('modal-name').textContent=p.name;document.getElementById('modal-desc').textContent=p.desc;document.getElementById('overlay').classList.add('open')}
+function closeModal(){document.getElementById('overlay').classList.remove('open')}
+function doLaunch(){if(!active)return;document.getElementById('appframe').src=active.url;document.getElementById('appframe').classList.add('on');document.getElementById('launcher').style.display='none';closeModal()}
+
+render();
+]]>
+</script>
+</body>
+</foreignObject>
+</svg>
